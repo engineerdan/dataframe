@@ -51,7 +51,7 @@ so do familiarize yourself with the following guidelines.
 
 ## PR workflow
 
-0. The contributor builds the library locally and runs all unit tests via the Gradle task `dataframe:test`
+0. The contributor builds the library locally and runs all unit tests via the Gradle task `<module>:test`
    (see the ["Building"](#building) chapter).
 1. The contributor submits the PR if the local build is successful and the tests are green.
 2. The reviewer put his name in the "Reviewers" section of the proposed PR at the start of the review process.

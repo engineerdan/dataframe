@@ -18,6 +18,7 @@ repositories {
 dependencies {
     implementation(project(":core"))
     implementation(project(":dataframe-excel"))
+    implementation(project(":dataframe-jdbc"))
     implementation(project(":dataframe-arrow"))
     testImplementation(libs.junit)
     testImplementation(libs.kotestAssertions) {
@@ -92,21 +93,6 @@ tasks.withType<LintTask> {
         it.name.endsWith("\$Extensions.kt")
     }
     enabled = true
-}
-
-kotlinter {
-    ignoreFailures = false
-    reporters = arrayOf("checkstyle", "plain")
-    experimentalRules = true
-    disabledRules = arrayOf(
-        "no-wildcard-imports",
-        "experimental:spacing-between-declarations-with-annotations",
-        "experimental:enum-entry-name-case",
-        "experimental:argument-list-wrapping",
-        "experimental:annotation",
-        "max-line-length",
-        "filename"
-    )
 }
 
 tasks.test {

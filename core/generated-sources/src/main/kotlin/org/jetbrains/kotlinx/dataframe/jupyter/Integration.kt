@@ -10,28 +10,29 @@ import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.DataRow
 import org.jetbrains.kotlinx.dataframe.annotations.DataSchema
 import org.jetbrains.kotlinx.dataframe.api.Convert
+import org.jetbrains.kotlinx.dataframe.api.FormatClause
 import org.jetbrains.kotlinx.dataframe.api.FormattedFrame
 import org.jetbrains.kotlinx.dataframe.api.Gather
 import org.jetbrains.kotlinx.dataframe.api.GroupBy
+import org.jetbrains.kotlinx.dataframe.api.GroupClause
+import org.jetbrains.kotlinx.dataframe.api.InsertClause
 import org.jetbrains.kotlinx.dataframe.api.Merge
+import org.jetbrains.kotlinx.dataframe.api.MoveClause
 import org.jetbrains.kotlinx.dataframe.api.Pivot
 import org.jetbrains.kotlinx.dataframe.api.PivotGroupBy
 import org.jetbrains.kotlinx.dataframe.api.ReducedGroupBy
 import org.jetbrains.kotlinx.dataframe.api.ReducedPivot
 import org.jetbrains.kotlinx.dataframe.api.ReducedPivotGroupBy
+import org.jetbrains.kotlinx.dataframe.api.RenameClause
+import org.jetbrains.kotlinx.dataframe.api.ReplaceClause
 import org.jetbrains.kotlinx.dataframe.api.Split
 import org.jetbrains.kotlinx.dataframe.api.SplitWithTransform
 import org.jetbrains.kotlinx.dataframe.api.Update
 import org.jetbrains.kotlinx.dataframe.api.asColumnGroup
 import org.jetbrains.kotlinx.dataframe.api.asDataFrame
 import org.jetbrains.kotlinx.dataframe.api.columnsCount
-import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
-import org.jetbrains.kotlinx.dataframe.api.frames
-import org.jetbrains.kotlinx.dataframe.api.into
 import org.jetbrains.kotlinx.dataframe.api.isColumnGroup
 import org.jetbrains.kotlinx.dataframe.api.name
-import org.jetbrains.kotlinx.dataframe.api.toDataFrame
-import org.jetbrains.kotlinx.dataframe.api.values
 import org.jetbrains.kotlinx.dataframe.codeGen.CodeWithConverter
 import org.jetbrains.kotlinx.dataframe.columns.ColumnGroup
 import org.jetbrains.kotlinx.dataframe.columns.ColumnReference
@@ -169,6 +170,7 @@ internal class Integration(
         if (version != null) {
             dependencies(
                 "org.jetbrains.kotlinx:dataframe-excel:$version",
+                "org.jetbrains.kotlinx:dataframe-jdbc:$version",
                 "org.jetbrains.kotlinx:dataframe-arrow:$version",
                 "org.jetbrains.kotlinx:dataframe-openapi:$version",
             )
@@ -176,7 +178,7 @@ internal class Integration(
 
         try {
             setMinimalKernelVersion(MIN_KERNEL_VERSION)
-        } catch (_: NoSuchMethodError) { // will be thrown on version < 0.11.0.198
+        } catch (_: NoSuchMethodError) { // will be thrown when a version < 0.11.0.198
             throw IllegalStateException(
                 getKernelUpdateMessage(notebook.kernelVersion, MIN_KERNEL_VERSION, notebook.jupyterClientType)
             )
@@ -213,6 +215,13 @@ internal class Integration(
                 { "DataRow: index = ${it.value.rowsCount()}, columnsCount = ${it.value.columnsCount()}" },
                 applyRowsLimit = false
             )
+
+            render<GroupClause<*, *>>({ "Group" })
+            render<MoveClause<*, *>>({ "Move" })
+            render<RenameClause<*, *>>({ "Rename" })
+            render<ReplaceClause<*, *>>({ "Replace" })
+            render<InsertClause<*>>({ "Insert" })
+            render<FormatClause<*, *>>({ "Format" })
 
             render<DataFrameHtmlData> {
                 // Our integration declares script and css definition. But in Kotlin Notebook outputs are isolated in IFrames
@@ -325,29 +334,3 @@ public fun KotlinKernelHost.useSchemas(schemaClasses: Iterable<KClass<*>>) {
 public fun KotlinKernelHost.useSchemas(vararg schemaClasses: KClass<*>): Unit = useSchemas(schemaClasses.asIterable())
 
 public inline fun <reified T> KotlinKernelHost.useSchema(): Unit = useSchemas(T::class)
-
-/**
- * Converts [dataframeLike] to [AnyFrame].
- * If [dataframeLike] is already [AnyFrame] then it is returned as is.
- * If it's not possible to convert [dataframeLike] to [AnyFrame] then [IllegalArgumentException] is thrown.
- */
-internal fun convertToDataFrame(dataframeLike: Any): AnyFrame =
-    when (dataframeLike) {
-        is Pivot<*> -> dataframeLike.frames().toDataFrame()
-        is ReducedPivot<*> -> dataframeLike.values().toDataFrame()
-        is PivotGroupBy<*> -> dataframeLike.frames()
-        is ReducedPivotGroupBy<*> -> dataframeLike.values()
-        is SplitWithTransform<*, *, *> -> dataframeLike.into()
-        is Split<*, *> -> dataframeLike.toDataFrame()
-        is Merge<*, *, *> -> dataframeLike.into("merged")
-        is Gather<*, *, *, *> -> dataframeLike.into("key", "value")
-        is Update<*, *> -> dataframeLike.df
-        is Convert<*, *> -> dataframeLike.df
-        is FormattedFrame<*> -> dataframeLike.df
-        is AnyCol -> dataFrameOf(dataframeLike)
-        is AnyRow -> dataframeLike.toDataFrame()
-        is GroupBy<*, *> -> dataframeLike.toDataFrame()
-        is AnyFrame -> dataframeLike
-        is DisableRowsLimitWrapper -> dataframeLike.value
-        else -> throw IllegalArgumentException("Unsupported type: ${dataframeLike::class}")
-    }

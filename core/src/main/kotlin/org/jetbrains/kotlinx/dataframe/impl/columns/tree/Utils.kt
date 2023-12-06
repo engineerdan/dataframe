@@ -8,6 +8,8 @@ import org.jetbrains.kotlinx.dataframe.columns.ColumnPath
 import org.jetbrains.kotlinx.dataframe.columns.ColumnWithPath
 import org.jetbrains.kotlinx.dataframe.impl.columns.addPath
 import org.jetbrains.kotlinx.dataframe.impl.columns.changePath
+import org.jetbrains.kotlinx.dataframe.util.TREENODE_TOPDFS_MESSAGE
+import org.jetbrains.kotlinx.dataframe.util.TREENODE_TOPDFS_REPLACE
 
 internal tailrec fun <T> ReadonlyTreeNode<T>.getAncestor(depth: Int): ReadonlyTreeNode<T> {
     if (depth > this.depth) throw UnsupportedOperationException()
@@ -41,7 +43,11 @@ internal fun <T> TreeNode<T>.topmostChildren(yieldCondition: (TreeNode<T>) -> Bo
         yieldCondition = yieldCondition,
     )
 
-@Deprecated("Use topmostChildren instead", ReplaceWith("topmostChildren(yieldCondition)"))
+@Deprecated(
+    message = TREENODE_TOPDFS_MESSAGE,
+    replaceWith = ReplaceWith(TREENODE_TOPDFS_REPLACE),
+    level = DeprecationLevel.ERROR,
+)
 internal fun <T> TreeNode<T>.topDfs(yieldCondition: (TreeNode<T>) -> Boolean): List<TreeNode<T>> =
     topmostChildren(yieldCondition)
 
